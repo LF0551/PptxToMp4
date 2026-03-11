@@ -8,10 +8,8 @@ void DraggableListWidget::dropEvent(QDropEvent *event)
 {
     if (event->mimeData()->hasFormat("application/x-qabstractitemmodeldatalist"))
     {
-        // Получаем позицию курсора
         QPoint pos = event->position().toPoint();
 
-        // Находим элемент под курсором
         QListWidgetItem *overItem = itemAt(pos);
         if (!overItem)
             overItem = itemAt({pos.x() + 20, pos.y()});
@@ -24,47 +22,29 @@ void DraggableListWidget::dropEvent(QDropEvent *event)
                 overItem = item(row(row1) - 1);
         }
 
+        int oldRow = currentRow();
 
         if (overItem)
         {
             int rowOver = row(overItem);
-            int oldRow = currentRow();
 
-            // Если перетаскиваем не на самого себя
             if (oldRow != rowOver)
             {
-                int t = count();
-                // Извлекаем перетаскиваемый элемент
                 QListWidgetItem *draggedItem = takeItem(oldRow);
-
-                for (int i = 0; i < t; ++i)
-                {
-                    if (i == rowOver)
-                    {
-                        qDebug() << draggedItem;
-                        addItem(draggedItem);
-                    }
-                    else
-                    {
-                        auto item = takeItem(0);
-                        qDebug() << item;
-                        addItem(item);
-                    }
-                }
+                insertItem(rowOver, draggedItem);
+                setCurrentItem(draggedItem);
             }
         }
         else
         {
-            qDebug() << count();
-            int oldRow = currentRow();
             QListWidgetItem *draggedItem = takeItem(oldRow);
-            qDebug() << count();
             addItem(draggedItem);
-            qDebug() << count();
-            //setCurrentItem(draggedItem);
-
+            setCurrentItem(draggedItem);
         }
 
+        // Предотвращаем повторное удаление элемента через Qt::startDrag → clearOrRemove():
+        // при MoveAction Qt удаляет исходный элемент сам, но мы уже сделали это вручную.
+        event->setDropAction(Qt::IgnoreAction);
         event->accept();
         return;
     }
