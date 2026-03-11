@@ -13,8 +13,9 @@ bool moveFile(const QString& from, const QString& to) {
         return false;
     }
     if (!QFile::copy(from, to)) {
-       return false;
+        return false;
     }
+    QFile::remove(from);
     return true;
 }
 
@@ -74,10 +75,28 @@ QStringList findFilesWithExtension(QDir dir,  const QString& extension)
 
 void convertPptx(const QString& pptxPath, const QString& outputDir) {
     QAxObject* powerpoint = new QAxObject("PowerPoint.Application");
+    if (!powerpoint || powerpoint->isNull()) {
+        delete powerpoint;
+        return;
+    }
     powerpoint->setProperty("Visible", false);
 
     QAxObject* presentations = powerpoint->querySubObject("Presentations");
+    if (!presentations || presentations->isNull()) {
+        powerpoint->dynamicCall("Quit()");
+        delete presentations;
+        delete powerpoint;
+        return;
+    }
+
     QAxObject* presentation = presentations->querySubObject("Open(const QString&)", pptxPath);
+    if (!presentation || presentation->isNull()) {
+        powerpoint->dynamicCall("Quit()");
+        delete presentation;
+        delete presentations;
+        delete powerpoint;
+        return;
+    }
 
     // Экспорт всех слайдов как изображений
     presentation->dynamicCall("Export(const QString&, const QString&, int, int)",
@@ -86,6 +105,7 @@ void convertPptx(const QString& pptxPath, const QString& outputDir) {
     presentation->dynamicCall("Close()");
     powerpoint->dynamicCall("Quit()");
     delete presentation;
+    delete presentations;
     delete powerpoint;
 }
 
