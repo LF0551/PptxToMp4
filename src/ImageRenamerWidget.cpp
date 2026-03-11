@@ -110,12 +110,20 @@ QStringList ImageRenamerWidget::getImageNameFilters()
 void ImageRenamerWidget::onOpenFolder()
 {
     const QString picturesPath = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation).value(0);
-    const QString folder = QFileDialog::getExistingDirectory(this, "Выберите папку с изображениями", picturesPath);
+    const QString folder = QFileDialog::getExistingDirectory(this, "Выберите папку с исходниками (PPTX/PDF)", picturesPath);
     if (folder.isEmpty()) return;
 
+    const QString output = QFileDialog::getExistingDirectory(this, "Выберите папку для сохранения изображений", picturesPath);
+    if (output.isEmpty()) return;
 
-//    const QString folder = "C:\\Users\\Apostol\\Downloads\\np";
-    const QString output = "C:\\Users\\Apostol\\Downloads\\Pic";
+    if (QDir(output).entryInfoList(QDir::NoDotAndDotDot | QDir::Files | QDir::Dirs).count() > 0)
+    {
+        const auto btn = QMessageBox::warning(this, "Папка не пуста",
+            "Папка \"" + output + "\" не пуста. Всё содержимое будет удалено. Продолжить?",
+            QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+        if (btn != QMessageBox::Yes)
+            return;
+    }
 
     removeDir(output);
 
@@ -142,50 +150,60 @@ void ImageRenamerWidget::renameFiles()
         return;
     }
 
-    const QFileInfo first(currentFiles.first());
-    const QString dirPath = first.path();
-    const QString baseName = "image";
-
-    bool success = true;
-    QStringList renamedFiles;
-    renamedFiles.reserve(currentFiles.size());
-
-    for (int i = 0; i < currentFiles.size(); ++i)
+    // Читаем порядок из listWidget, а не из currentFiles
+    // (пользователь мог перетащить элементы)
+    QStringList orderedFiles;
+    orderedFiles.reserve(listWidget->count());
+    for (int i = 0; i < listWidget->count(); ++i)
     {
-        const QFileInfo oldFile(currentFiles[i]);
-        const QString newFileName = QString("%1/%2%3.%4")
-                .arg(dirPath)
-                        //.arg(baseName)
-                .arg(i + 1)
-                .arg("." + oldFile.suffix())
-                .arg("tmp");
-
-        if (QFile::exists(newFileName))
+        const QString label = listWidget->item(i)->text();
+        // Ищем соответствующий путь в currentFiles по имени файла
+        for (const QString &path : currentFiles)
         {
-            // Защита от перезаписи (например, если уже есть image001.jpg)
-            success = false;
-            QMessageBox::critical(this, "Ошибка", "Файл уже существует: " + newFileName);
-            break;
+            if (QFileInfo(path).fileName() == label)
+            {
+                orderedFiles << path;
+                break;
+            }
         }
+    }
+    if (orderedFiles.size() != currentFiles.size())
+        orderedFiles = currentFiles; // fallback
 
-        if (!QFile::rename(currentFiles[i], newFileName))
+    const QString dirPath = QFileInfo(orderedFiles.first()).path();
+
+    // Первый проход: переименовываем во временные имена, чтобы избежать конфликтов
+    QStringList tmpFiles;
+    tmpFiles.reserve(orderedFiles.size());
+    for (int i = 0; i < orderedFiles.size(); ++i)
+    {
+        const QFileInfo oldFile(orderedFiles[i]);
+        const QString tmpName = dirPath + "/" + QString::number(i + 1) + "." + oldFile.suffix() + ".tmp";
+        if (!QFile::rename(orderedFiles[i], tmpName))
         {
-            success = false;
-            break;
+            QMessageBox::critical(this, "Ошибка", "Не удалось переименовать: " + orderedFiles[i]);
+            return;
         }
-        renamedFiles << newFileName;
+        tmpFiles << tmpName;
     }
 
-    if (success)
+    // Второй проход: убираем суффикс .tmp
+    QStringList finalFiles;
+    finalFiles.reserve(tmpFiles.size());
+    for (const QString &tmpPath : tmpFiles)
     {
-        currentFiles = renamedFiles;
-        QMessageBox::information(this, "Готово", "Файлы успешно переименованы!");
-        refreshListWidget();
+        const QString finalPath = tmpPath.chopped(4); // убрать ".tmp"
+        if (!QFile::rename(tmpPath, finalPath))
+        {
+            QMessageBox::critical(this, "Ошибка", "Не удалось финализировать: " + tmpPath);
+            return;
+        }
+        finalFiles << finalPath;
     }
-    else
-    {
-        QMessageBox::critical(this, "Ошибка", "Не удалось переименовать некоторые файлы.");
-    }
+
+    currentFiles = finalFiles;
+    QMessageBox::information(this, "Готово", "Файлы успешно переименованы!");
+    refreshListWidget();
 }
 
 void ImageRenamerWidget::refreshListWidget()
