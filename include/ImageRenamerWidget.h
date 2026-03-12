@@ -29,6 +29,7 @@ private slots:
     void renameFiles();
 
     void createMp4Video();
+    void deleteSelectedImages();
 
     void refreshListWidget();
 
@@ -43,6 +44,7 @@ private:
     QListWidget *listWidget;
     QPushButton *btnOpen;
     QPushButton *btnRename;
+    QPushButton *btnDeleteSelected;
     QPushButton *btnCreateVideo;
     QPushButton *btnChooseSourceFolder;
     QPushButton *btnChooseOutputFolder;

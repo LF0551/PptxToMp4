@@ -76,9 +76,11 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
     listWidget->setIconSize(QSize(128, 128));
     listWidget->setResizeMode(QListView::Adjust);
     listWidget->setUniformItemSizes(true);
+    listWidget->setSelectionMode(QAbstractItemView::ExtendedSelection);
 
     btnOpen = new QPushButton("Конвертировать в изображения", this);
     btnRename = new QPushButton("Переименовать по порядку", this);
+    btnDeleteSelected = new QPushButton("Удалить выбранные", this);
     btnCreateVideo = new QPushButton("Склеить в MP4", this);
 
     btnChooseSourceFolder = new QPushButton("...", this);
@@ -134,6 +136,7 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
     layout->addWidget(btnOpen);
     layout->addWidget(listWidget);
     layout->addWidget(btnRename);
+    layout->addWidget(btnDeleteSelected);
     layout->addLayout(videoRow);
     layout->addLayout(fpsRow);
     layout->addWidget(btnCreateVideo);
@@ -143,6 +146,7 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
     connect(btnChooseVideoPath, &QPushButton::clicked, this, &ImageRenamerWidget::chooseVideoPath);
     connect(btnOpen, &QPushButton::clicked, this, &ImageRenamerWidget::onOpenFolder);
     connect(btnRename, &QPushButton::clicked, this, &ImageRenamerWidget::renameFiles);
+    connect(btnDeleteSelected, &QPushButton::clicked, this, &ImageRenamerWidget::deleteSelectedImages);
     connect(btnCreateVideo, &QPushButton::clicked, this, &ImageRenamerWidget::createMp4Video);
 
     const QString picturesPath = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation).value(0);
@@ -325,6 +329,59 @@ void ImageRenamerWidget::renameFiles()
     currentFiles = finalFiles;
     QMessageBox::information(this, "Готово", "Файлы успешно переименованы!");
     refreshListWidget();
+}
+
+void ImageRenamerWidget::deleteSelectedImages()
+{
+    const QList<QListWidgetItem *> selectedItems = listWidget->selectedItems();
+    if (selectedItems.isEmpty())
+    {
+        QMessageBox::warning(this, "Ошибка", "Выберите изображения для удаления.");
+        return;
+    }
+
+    const auto btn = QMessageBox::question(
+        this,
+        "Подтверждение",
+        "Удалить выбранные изображения?",
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+
+    if (btn != QMessageBox::Yes)
+    {
+        return;
+    }
+
+    int deletedCount = 0;
+
+    for (QListWidgetItem *item : selectedItems)
+    {
+        const QString itemFileName = item->text();
+        for (int i = currentFiles.size() - 1; i >= 0; --i)
+        {
+            if (QFileInfo(currentFiles[i]).fileName() != itemFileName)
+            {
+                continue;
+            }
+
+            if (QFile::remove(currentFiles[i]))
+            {
+                currentFiles.removeAt(i);
+                ++deletedCount;
+            }
+            break;
+        }
+    }
+
+    refreshListWidget();
+
+    if (deletedCount == 0)
+    {
+        QMessageBox::warning(this, "Ошибка", "Не удалось удалить выбранные изображения.");
+        return;
+    }
+
+    QMessageBox::information(this, "Готово", "Удалено изображений: " + QString::number(deletedCount));
 }
 
 void ImageRenamerWidget::createMp4Video()
