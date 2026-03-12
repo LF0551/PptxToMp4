@@ -32,6 +32,7 @@ private slots:
     void deleteSelectedImages();
 
     void refreshListWidget();
+    void openImagePreview(QListWidgetItem *item);
 
 
 private:
