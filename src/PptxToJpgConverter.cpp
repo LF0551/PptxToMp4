@@ -6,6 +6,55 @@
 #include <QFileInfo>
 #include <QProcess>
 #include <QCollator>
+#include <QImage>
+#include <QPainter>
+
+namespace {
+
+constexpr int kLandscapeWidth = 1920;
+constexpr int kLandscapeHeight = 1080;
+
+bool isPortrait(const QImage &image)
+{
+    return image.height() > image.width();
+}
+
+void convertPortraitImageToLandscape(const QString &filePath)
+{
+    QImage source(filePath);
+    if (source.isNull() || !isPortrait(source)) {
+        return;
+    }
+
+    const QSize targetSize(kLandscapeWidth, kLandscapeHeight);
+    const QImage scaled = source.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    QImage canvas(targetSize, QImage::Format_RGB32);
+    canvas.fill(Qt::black);
+
+    QPainter painter(&canvas);
+    const int x = (targetSize.width() - scaled.width()) / 2;
+    const int y = (targetSize.height() - scaled.height()) / 2;
+    painter.drawImage(x, y, scaled);
+    painter.end();
+
+    canvas.save(filePath);
+}
+
+void normalizePortraitImagesInDirectory(const QString &dirPath)
+{
+    QDir directory(dirPath);
+    if (!directory.exists()) {
+        return;
+    }
+
+    const QFileInfoList imageFiles = directory.entryInfoList(QDir::Files, QDir::Name);
+    for (const QFileInfo &imageFile : imageFiles) {
+        convertPortraitImageToLandscape(imageFile.absoluteFilePath());
+    }
+}
+
+}
 
 
 bool moveFile(const QString& from, const QString& to) {
@@ -177,4 +226,6 @@ void convertPptxToJpg(const QString& pptxPath, const QString& outputDir)
         convertPdfToJpg(cleanPath, tmpPath, 150);
         renameAndMoveAllFilesInDirectory(tmpPath,outputDir);
     }
+
+    normalizePortraitImagesInDirectory(outputDir);
 }
