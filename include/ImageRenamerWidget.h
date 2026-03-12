@@ -3,6 +3,7 @@
 #include <QListWidget>
 #include <QPushButton>
 #include <QStringList>
+#include <QSpinBox>
 
 
 class ImageRenamerWidget : public QWidget
@@ -22,6 +23,8 @@ private slots:
 
     void renameFiles();
 
+    void createMp4Video();
+
     void refreshListWidget();
 
 
@@ -30,9 +33,13 @@ private:
 
     QStringList getImageNameFilters();
 
+    QStringList getOrderedFilesFromListWidget() const;
+
     QListWidget *listWidget;
     QPushButton *btnOpen;
     QPushButton *btnRename;
+    QPushButton *btnCreateVideo;
+    QSpinBox *fpsSpinBox;
 
     QStringList currentFiles;
 

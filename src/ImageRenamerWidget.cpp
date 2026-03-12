@@ -12,11 +12,14 @@
 #include <QUrl>
 #include <QAbstractItemModel>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
 #include "ImageRenamerWidget.h"
 #include "PptxToJpgConverter.h"
 #include <QDragEnterEvent>
 #include <QCollator>
 #include "DraggableListWidget.h"
+#include <opencv2/opencv.hpp>
 
 const int iconSize = 128;
 
@@ -81,14 +84,54 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
 
     btnOpen = new QPushButton("Открыть папку", this);
     btnRename = new QPushButton("Переименовать по порядку", this);
+    btnCreateVideo = new QPushButton("Склеить в MP4", this);
+
+    fpsSpinBox = new QSpinBox(this);
+    fpsSpinBox->setRange(1, 120);
+    fpsSpinBox->setValue(30);
+    fpsSpinBox->setSuffix(" FPS");
+
+    auto *fpsRow = new QHBoxLayout();
+    fpsRow->addWidget(new QLabel("Частота кадров:", this));
+    fpsRow->addWidget(fpsSpinBox);
+    fpsRow->addStretch();
 
     QVBoxLayout *layout = new QVBoxLayout(this);
     layout->addWidget(btnOpen);
     layout->addWidget(listWidget);
     layout->addWidget(btnRename); // убрали btnUp/btnDown — их нет в объявлении
+    layout->addLayout(fpsRow);
+    layout->addWidget(btnCreateVideo);
 
     connect(btnOpen, &QPushButton::clicked, this, &ImageRenamerWidget::onOpenFolder);
     connect(btnRename, &QPushButton::clicked, this, &ImageRenamerWidget::renameFiles);
+    connect(btnCreateVideo, &QPushButton::clicked, this, &ImageRenamerWidget::createMp4Video);
+}
+
+QStringList ImageRenamerWidget::getOrderedFilesFromListWidget() const
+{
+    QStringList orderedFiles;
+    orderedFiles.reserve(listWidget->count());
+
+    for (int i = 0; i < listWidget->count(); ++i)
+    {
+        const QString label = listWidget->item(i)->text();
+        for (const QString &path : currentFiles)
+        {
+            if (QFileInfo(path).fileName() == label)
+            {
+                orderedFiles << path;
+                break;
+            }
+        }
+    }
+
+    if (orderedFiles.size() != currentFiles.size())
+    {
+        return currentFiles;
+    }
+
+    return orderedFiles;
 }
 
 QStringList ImageRenamerWidget::getImageExtensions()
@@ -150,25 +193,7 @@ void ImageRenamerWidget::renameFiles()
         return;
     }
 
-    // Читаем порядок из listWidget, а не из currentFiles
-    // (пользователь мог перетащить элементы)
-    QStringList orderedFiles;
-    orderedFiles.reserve(listWidget->count());
-    for (int i = 0; i < listWidget->count(); ++i)
-    {
-        const QString label = listWidget->item(i)->text();
-        // Ищем соответствующий путь в currentFiles по имени файла
-        for (const QString &path : currentFiles)
-        {
-            if (QFileInfo(path).fileName() == label)
-            {
-                orderedFiles << path;
-                break;
-            }
-        }
-    }
-    if (orderedFiles.size() != currentFiles.size())
-        orderedFiles = currentFiles; // fallback
+    const QStringList orderedFiles = getOrderedFilesFromListWidget();
 
     const QString dirPath = QFileInfo(orderedFiles.first()).path();
 
@@ -204,6 +229,67 @@ void ImageRenamerWidget::renameFiles()
     currentFiles = finalFiles;
     QMessageBox::information(this, "Готово", "Файлы успешно переименованы!");
     refreshListWidget();
+}
+
+void ImageRenamerWidget::createMp4Video()
+{
+    if (currentFiles.isEmpty())
+    {
+        QMessageBox::warning(this, "Ошибка", "Нет изображений для создания видео.");
+        return;
+    }
+
+    const QString outputPath = QFileDialog::getSaveFileName(
+        this,
+        "Сохранить видео",
+        QFileInfo(currentFiles.first()).absolutePath() + "/result.mp4",
+        "MP4 Video (*.mp4)");
+
+    if (outputPath.isEmpty())
+    {
+        return;
+    }
+
+    const QStringList orderedFiles = getOrderedFilesFromListWidget();
+    const cv::Mat firstFrame = cv::imread(orderedFiles.first().toStdString(), cv::IMREAD_COLOR);
+    if (firstFrame.empty())
+    {
+        QMessageBox::critical(this, "Ошибка", "Не удалось прочитать первое изображение.");
+        return;
+    }
+
+    cv::VideoWriter writer(
+        outputPath.toStdString(),
+        cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
+        static_cast<double>(fpsSpinBox->value()),
+        firstFrame.size());
+
+    if (!writer.isOpened())
+    {
+        QMessageBox::critical(this, "Ошибка", "Не удалось открыть MP4-файл для записи.");
+        return;
+    }
+
+    for (const QString &filePath : orderedFiles)
+    {
+        cv::Mat frame = cv::imread(filePath.toStdString(), cv::IMREAD_COLOR);
+        if (frame.empty())
+        {
+            writer.release();
+            QMessageBox::critical(this, "Ошибка", "Не удалось прочитать изображение: " + filePath);
+            return;
+        }
+
+        if (frame.size() != firstFrame.size())
+        {
+            cv::resize(frame, frame, firstFrame.size(), 0.0, 0.0, cv::INTER_AREA);
+        }
+
+        writer.write(frame);
+    }
+
+    writer.release();
+    QMessageBox::information(this, "Готово", "Видео успешно создано: " + outputPath);
 }
 
 void ImageRenamerWidget::refreshListWidget()
