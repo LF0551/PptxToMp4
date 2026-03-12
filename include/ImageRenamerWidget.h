@@ -7,6 +7,7 @@
 #include <QDoubleSpinBox>
 #include <QLineEdit>
 #include <QCloseEvent>
+#include <QLabel>
 
 
 class ImageRenamerWidget : public QWidget
@@ -58,6 +59,8 @@ private:
     QLineEdit *sourceFolderEdit;
     QLineEdit *outputFolderEdit;
     QLineEdit *videoPathEdit;
+    QLabel *hintLabel;
+    QLabel *listSummaryLabel;
 
     QStringList currentFiles;
 
