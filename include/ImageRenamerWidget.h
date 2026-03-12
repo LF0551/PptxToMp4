@@ -4,6 +4,8 @@
 #include <QPushButton>
 #include <QStringList>
 #include <QSpinBox>
+#include <QDoubleSpinBox>
+#include <QLineEdit>
 
 
 class ImageRenamerWidget : public QWidget
@@ -20,6 +22,9 @@ protected:
 private slots:
 
     void onOpenFolder();
+    void chooseSourceFolder();
+    void chooseOutputFolder();
+    void chooseVideoPath();
 
     void renameFiles();
 
@@ -39,7 +44,14 @@ private:
     QPushButton *btnOpen;
     QPushButton *btnRename;
     QPushButton *btnCreateVideo;
+    QPushButton *btnChooseSourceFolder;
+    QPushButton *btnChooseOutputFolder;
+    QPushButton *btnChooseVideoPath;
     QSpinBox *fpsSpinBox;
+    QDoubleSpinBox *secondsPerImageSpinBox;
+    QLineEdit *sourceFolderEdit;
+    QLineEdit *outputFolderEdit;
+    QLineEdit *videoPathEdit;
 
     QStringList currentFiles;
 
