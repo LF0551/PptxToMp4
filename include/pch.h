@@ -1,0 +1,41 @@
+#pragma once
+
+#include <algorithm>
+#include <cmath>
+
+#include <QAbstractItemModel>
+#include <QApplication>
+#include <QAxObject>
+#include <QCollator>
+#include <QCloseEvent>
+#include <QDialog>
+#include <QDir>
+#include <QDoubleSpinBox>
+#include <QFile>
+#include <QFileDialog>
+#include <QFileInfo>
+#include <QGroupBox>
+#include <QHBoxLayout>
+#include <QIcon>
+#include <QImage>
+#include <QImageReader>
+#include <QLabel>
+#include <QLineEdit>
+#include <QListWidget>
+#include <QListWidgetItem>
+#include <QMessageBox>
+#include <QMimeData>
+#include <QPainter>
+#include <QPixmap>
+#include <QProcess>
+#include <QPushButton>
+#include <QSettings>
+#include <QSpinBox>
+#include <QStandardPaths>
+#include <QString>
+#include <QStringList>
+#include <QUrl>
+#include <QVBoxLayout>
+#include <QWidget>
+
+#include <opencv2/opencv.hpp>

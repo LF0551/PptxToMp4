@@ -14,15 +14,26 @@ find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets AxContainer)
 find_package(OpenCV REQUIRED)
 
 add_executable(${PROJECT_NAME}
+        include/DraggableListWidget.h
         include/ImageRenamerWidget.h
+        include/Mp4VideoCreator.h
+        include/PdfConverter.h
+        include/pch.h
+        include/PresentationBatchConverter.h
+        include/PptxConverter.h
         include/PptxToJpgConverter.h
 
-        src/main.cpp
-        src/ImageRenamerWidget.cpp
-        src/PptxToJpgConverter.cpp
         src/DraggableListWidget.cpp
-        include/DraggableListWidget.h
+        src/ImageRenamerWidget.cpp
+        src/main.cpp
+        src/Mp4VideoCreator.cpp
+        src/PdfConverter.cpp
+        src/PresentationBatchConverter.cpp
+        src/PptxConverter.cpp
+        src/PptxToJpgConverter.cpp
 )
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE include/pch.h)
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets Qt6::AxContainer ${OpenCV_LIBS})
