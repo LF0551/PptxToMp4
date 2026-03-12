@@ -14,6 +14,7 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QDialog>
 #include <cmath>
 #include "ImageRenamerWidget.h"
 #include "PptxToJpgConverter.h"
@@ -148,6 +149,7 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
     connect(btnRename, &QPushButton::clicked, this, &ImageRenamerWidget::renameFiles);
     connect(btnDeleteSelected, &QPushButton::clicked, this, &ImageRenamerWidget::deleteSelectedImages);
     connect(btnCreateVideo, &QPushButton::clicked, this, &ImageRenamerWidget::createMp4Video);
+    connect(listWidget, &QListWidget::itemDoubleClicked, this, &ImageRenamerWidget::openImagePreview);
 
     const QString picturesPath = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation).value(0);
     sourceFolderEdit->setText(picturesPath);
@@ -382,6 +384,53 @@ void ImageRenamerWidget::deleteSelectedImages()
     }
 
     QMessageBox::information(this, "Готово", "Удалено изображений: " + QString::number(deletedCount));
+}
+
+
+void ImageRenamerWidget::openImagePreview(QListWidgetItem *item)
+{
+    if (item == nullptr)
+    {
+        return;
+    }
+
+    const QString fileName = item->text();
+    QString filePath;
+
+    for (const QString &path : currentFiles)
+    {
+        if (QFileInfo(path).fileName() == fileName)
+        {
+            filePath = path;
+            break;
+        }
+    }
+
+    if (filePath.isEmpty())
+    {
+        QMessageBox::warning(this, "Ошибка", "Не удалось найти выбранное изображение.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle(fileName);
+    dialog.resize(1000, 700);
+
+    auto *layout = new QVBoxLayout(&dialog);
+    auto *imageLabel = new QLabel(&dialog);
+    imageLabel->setAlignment(Qt::AlignCenter);
+
+    QPixmap pixmap(filePath);
+    if (pixmap.isNull())
+    {
+        QMessageBox::warning(this, "Ошибка", "Не удалось открыть изображение: " + filePath);
+        return;
+    }
+
+    imageLabel->setPixmap(pixmap.scaled(dialog.size(), Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    layout->addWidget(imageLabel);
+
+    dialog.exec();
 }
 
 void ImageRenamerWidget::createMp4Video()
