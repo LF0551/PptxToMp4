@@ -6,6 +6,7 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QLineEdit>
+#include <QCloseEvent>
 
 
 class ImageRenamerWidget : public QWidget
@@ -16,8 +17,7 @@ public:
     explicit ImageRenamerWidget(QWidget *parent = nullptr);
 
 protected:
-//    void dragEnterEvent(QDragEnterEvent *event) override;
-//    void dropEvent(QDropEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
 
 private slots:
 
@@ -36,6 +36,9 @@ private slots:
 
 
 private:
+    void loadSettings();
+    void saveSettings() const;
+
     QStringList getImageExtensions();
 
     QStringList getImageNameFilters();
