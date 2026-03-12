@@ -489,14 +489,26 @@ void ImageRenamerWidget::createMp4Video()
 
     const QStringList orderedFiles = getOrderedFilesFromListWidget();
 
+    QProgressDialog progressDialog("Создание видео...", QString(), 0, orderedFiles.size(), this);
+    progressDialog.setWindowModality(Qt::WindowModal);
+    progressDialog.setMinimumDuration(0);
+    progressDialog.setValue(0);
+
     QString error;
     const Mp4VideoCreator creator;
     if (!creator.createVideo(orderedFiles,
                              outputPath,
                              fpsSpinBox->value(),
                              secondsPerImageSpinBox->value(),
+                             [&progressDialog](int processed, int total)
+                             {
+                                 progressDialog.setMaximum(total);
+                                 progressDialog.setValue(processed);
+                                 QCoreApplication::processEvents();
+                             },
                              &error))
     {
+        progressDialog.close();
         QMessageBox::critical(this, "Ошибка", error);
         return;
     }
