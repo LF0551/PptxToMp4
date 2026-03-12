@@ -15,6 +15,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QDialog>
+#include <QSettings>
 #include <cmath>
 #include "ImageRenamerWidget.h"
 #include "PptxToJpgConverter.h"
@@ -151,10 +152,38 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
     connect(btnCreateVideo, &QPushButton::clicked, this, &ImageRenamerWidget::createMp4Video);
     connect(listWidget, &QListWidget::itemDoubleClicked, this, &ImageRenamerWidget::openImagePreview);
 
+    loadSettings();
+}
+
+void ImageRenamerWidget::closeEvent(QCloseEvent *event)
+{
+    saveSettings();
+    QWidget::closeEvent(event);
+}
+
+void ImageRenamerWidget::loadSettings()
+{
     const QString picturesPath = QStandardPaths::standardLocations(QStandardPaths::PicturesLocation).value(0);
-    sourceFolderEdit->setText(picturesPath);
-    outputFolderEdit->setText(picturesPath + "/converted_images");
-    videoPathEdit->setText(picturesPath + "/result.mp4");
+    const QString defaultSource = picturesPath;
+    const QString defaultOutput = picturesPath + "/converted_images";
+    const QString defaultVideo = picturesPath + "/result.mp4";
+
+    QSettings settings("PptxToMp4", "PptxToMp4");
+    sourceFolderEdit->setText(settings.value("paths/sourceFolder", defaultSource).toString());
+    outputFolderEdit->setText(settings.value("paths/outputFolder", defaultOutput).toString());
+    videoPathEdit->setText(settings.value("paths/videoPath", defaultVideo).toString());
+    fpsSpinBox->setValue(settings.value("video/fps", 30).toInt());
+    secondsPerImageSpinBox->setValue(settings.value("video/secondsPerImage", 1.0).toDouble());
+}
+
+void ImageRenamerWidget::saveSettings() const
+{
+    QSettings settings("PptxToMp4", "PptxToMp4");
+    settings.setValue("paths/sourceFolder", sourceFolderEdit->text().trimmed());
+    settings.setValue("paths/outputFolder", outputFolderEdit->text().trimmed());
+    settings.setValue("paths/videoPath", videoPathEdit->text().trimmed());
+    settings.setValue("video/fps", fpsSpinBox->value());
+    settings.setValue("video/secondsPerImage", secondsPerImageSpinBox->value());
 }
 
 QStringList ImageRenamerWidget::getOrderedFilesFromListWidget() const
