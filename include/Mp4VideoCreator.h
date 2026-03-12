@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include <QString>
 #include <QStringList>
 
@@ -10,5 +12,6 @@ public:
                      const QString &outputPath,
                      int fps,
                      double secondsPerImage,
+                     const std::function<void(int, int)> &progressCallback = {},
                      QString *error = nullptr) const;
 };

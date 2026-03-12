@@ -5,47 +5,6 @@
 
 namespace {
 
-constexpr int kLandscapeWidth = 1920;
-constexpr int kLandscapeHeight = 1080;
-
-bool isPortrait(const QImage &image)
-{
-    return image.height() > image.width();
-}
-
-void convertPortraitImageToLandscape(const QString &filePath)
-{
-    QImage source(filePath);
-    if (source.isNull() || !isPortrait(source)) {
-        return;
-    }
-
-    const QSize targetSize(kLandscapeWidth, kLandscapeHeight);
-    const QImage scaled = source.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-
-    QImage canvas(targetSize, QImage::Format_RGB32);
-    canvas.fill(Qt::white);
-
-    QPainter painter(&canvas);
-    const int x = (targetSize.width() - scaled.width()) / 2;
-    const int y = (targetSize.height() - scaled.height()) / 2;
-    painter.drawImage(x, y, scaled);
-
-    canvas.save(filePath);
-}
-
-void normalizePortraitImagesInDirectory(const QString &dirPath)
-{
-    QDir directory(dirPath);
-    if (!directory.exists()) {
-        return;
-    }
-
-    const QFileInfoList imageFiles = directory.entryInfoList(QDir::Files, QDir::Name);
-    for (const QFileInfo &imageFile : imageFiles) {
-        convertPortraitImageToLandscape(imageFile.absoluteFilePath());
-    }
-}
 
 bool moveFile(const QString &from, const QString &to)
 {
@@ -143,6 +102,5 @@ bool PresentationBatchConverter::convertFolder(const QString &inputDirPath, cons
         renameAndMoveAllFilesInDirectory(tmpPath, outputDirPath);
     }
 
-    normalizePortraitImagesInDirectory(outputDirPath);
     return true;
 }

@@ -8,6 +8,7 @@
 #include <QAxObject>
 #include <QCollator>
 #include <QCloseEvent>
+#include <QCoreApplication>
 #include <QDialog>
 #include <QDir>
 #include <QDoubleSpinBox>
@@ -28,6 +29,7 @@
 #include <QPainter>
 #include <QPixmap>
 #include <QProcess>
+#include <QProgressDialog>
 #include <QPushButton>
 #include <QSettings>
 #include <QSpinBox>

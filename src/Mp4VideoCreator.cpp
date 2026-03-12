@@ -4,6 +4,7 @@ bool Mp4VideoCreator::createVideo(const QStringList &orderedImages,
                                   const QString &outputPath,
                                   int fps,
                                   double secondsPerImage,
+                                  const std::function<void(int, int)> &progressCallback,
                                   QString *error) const
 {
     if (orderedImages.isEmpty()) {
@@ -36,6 +37,13 @@ bool Mp4VideoCreator::createVideo(const QStringList &orderedImages,
         return false;
     }
 
+    const int totalImages = orderedImages.size();
+    int processedImages = 0;
+
+    if (progressCallback) {
+        progressCallback(processedImages, totalImages);
+    }
+
     for (const QString &filePath : orderedImages) {
         cv::Mat frame = cv::imread(filePath.toStdString(), cv::IMREAD_COLOR);
         if (frame.empty()) {
@@ -52,6 +60,11 @@ bool Mp4VideoCreator::createVideo(const QStringList &orderedImages,
 
         for (int i = 0; i < framesPerImage; ++i) {
             writer.write(frame);
+        }
+
+        ++processedImages;
+        if (progressCallback) {
+            progressCallback(processedImages, totalImages);
         }
     }
 
