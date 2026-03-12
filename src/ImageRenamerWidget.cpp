@@ -1,3 +1,4 @@
+#include "pch.h"
 #include <QStandardPaths>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -20,10 +21,10 @@
 #include <cmath>
 #include "ImageRenamerWidget.h"
 #include "PptxToJpgConverter.h"
+#include "Mp4VideoCreator.h"
 #include <QDragEnterEvent>
 #include <QCollator>
 #include "DraggableListWidget.h"
-#include <opencv2/opencv.hpp>
 
 const int iconSize = 128;
 
@@ -510,50 +511,19 @@ void ImageRenamerWidget::createMp4Video()
     }
 
     const QStringList orderedFiles = getOrderedFilesFromListWidget();
-    const cv::Mat firstFrame = cv::imread(orderedFiles.first().toStdString(), cv::IMREAD_COLOR);
-    if (firstFrame.empty())
+
+    QString error;
+    const Mp4VideoCreator creator;
+    if (!creator.createVideo(orderedFiles,
+                             outputPath,
+                             fpsSpinBox->value(),
+                             secondsPerImageSpinBox->value(),
+                             &error))
     {
-        QMessageBox::critical(this, "Ошибка", "Не удалось прочитать первое изображение.");
+        QMessageBox::critical(this, "Ошибка", error);
         return;
     }
 
-    const int fps = fpsSpinBox->value();
-    const int framesPerImage = std::max(1, static_cast<int>(std::lround(secondsPerImageSpinBox->value() * fps)));
-
-    cv::VideoWriter writer(
-        outputPath.toStdString(),
-        cv::VideoWriter::fourcc('m', 'p', '4', 'v'),
-        static_cast<double>(fps),
-        firstFrame.size());
-
-    if (!writer.isOpened())
-    {
-        QMessageBox::critical(this, "Ошибка", "Не удалось открыть MP4-файл для записи.");
-        return;
-    }
-
-    for (const QString &filePath : orderedFiles)
-    {
-        cv::Mat frame = cv::imread(filePath.toStdString(), cv::IMREAD_COLOR);
-        if (frame.empty())
-        {
-            writer.release();
-            QMessageBox::critical(this, "Ошибка", "Не удалось прочитать изображение: " + filePath);
-            return;
-        }
-
-        if (frame.size() != firstFrame.size())
-        {
-            cv::resize(frame, frame, firstFrame.size(), 0.0, 0.0, cv::INTER_AREA);
-        }
-
-        for (int i = 0; i < framesPerImage; ++i)
-        {
-            writer.write(frame);
-        }
-    }
-
-    writer.release();
     QMessageBox::information(this, "Готово", "Видео успешно создано: " + outputPath);
 }
 
