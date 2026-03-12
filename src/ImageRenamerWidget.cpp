@@ -16,6 +16,7 @@
 #include <QLabel>
 #include <QDialog>
 #include <QSettings>
+#include <QGroupBox>
 #include <cmath>
 #include "ImageRenamerWidget.h"
 #include "PptxToJpgConverter.h"
@@ -61,8 +62,9 @@ bool removeDir(const QString &dirPath)
 ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
         : QWidget(parent)
 {
-    setWindowTitle("Переименовщик изображений");
-    resize(760, 580);
+    setWindowTitle("PptxToMp4 — подготовка слайдов и сборка видео");
+    resize(980, 700);
+    setMinimumSize(900, 620);
 
     listWidget = new DraggableListWidget(this);
 
@@ -97,6 +99,15 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
     outputFolderEdit->setPlaceholderText("Папка для изображений");
     videoPathEdit->setPlaceholderText("Путь к итоговому MP4");
 
+    sourceFolderEdit->setToolTip("Папка, в которой лежат PPTX или PDF файлы.");
+    outputFolderEdit->setToolTip("Папка, куда будут сохранены изображения слайдов.");
+    videoPathEdit->setToolTip("Полный путь к финальному MP4-файлу.");
+
+    btnOpen->setToolTip("Шаг 1. Конвертировать презентацию в набор изображений.");
+    btnRename->setToolTip("Шаг 2. Нормализовать порядок имён по текущему порядку в списке.");
+    btnDeleteSelected->setToolTip("Удалить выделенные изображения из набора.");
+    btnCreateVideo->setToolTip("Шаг 3. Собрать MP4 по текущему порядку изображений.");
+
     fpsSpinBox = new QSpinBox(this);
     fpsSpinBox->setRange(1, 120);
     fpsSpinBox->setValue(30);
@@ -119,6 +130,24 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
     outputRow->addWidget(outputFolderEdit);
     outputRow->addWidget(btnChooseOutputFolder);
 
+    auto *convertBox = new QGroupBox("Шаг 1. Конвертация", this);
+    auto *convertLayout = new QVBoxLayout(convertBox);
+    convertLayout->addLayout(sourceRow);
+    convertLayout->addLayout(outputRow);
+    convertLayout->addWidget(btnOpen);
+
+    hintLabel = new QLabel("Подсказка: перетаскивайте карточки мышью для изменения порядка. Двойной клик — предпросмотр.", this);
+    hintLabel->setWordWrap(true);
+    hintLabel->setStyleSheet("color: #555;");
+
+    listSummaryLabel = new QLabel("Изображений: 0", this);
+
+    auto *listActionsRow = new QHBoxLayout();
+    listActionsRow->addWidget(btnRename);
+    listActionsRow->addWidget(btnDeleteSelected);
+    listActionsRow->addStretch();
+    listActionsRow->addWidget(listSummaryLabel);
+
     auto *videoRow = new QHBoxLayout();
     videoRow->addWidget(new QLabel("Видео MP4:", this));
     videoRow->addWidget(videoPathEdit);
@@ -132,16 +161,19 @@ ImageRenamerWidget::ImageRenamerWidget(QWidget *parent)
     fpsRow->addWidget(secondsPerImageSpinBox);
     fpsRow->addStretch();
 
+    auto *videoBox = new QGroupBox("Шаг 2. Сборка видео", this);
+    auto *videoLayout = new QVBoxLayout(videoBox);
+    videoLayout->addLayout(videoRow);
+    videoLayout->addLayout(fpsRow);
+    videoLayout->addWidget(btnCreateVideo);
+
     QVBoxLayout *layout = new QVBoxLayout(this);
-    layout->addLayout(sourceRow);
-    layout->addLayout(outputRow);
-    layout->addWidget(btnOpen);
-    layout->addWidget(listWidget);
-    layout->addWidget(btnRename);
-    layout->addWidget(btnDeleteSelected);
-    layout->addLayout(videoRow);
-    layout->addLayout(fpsRow);
-    layout->addWidget(btnCreateVideo);
+    layout->setSpacing(10);
+    layout->addWidget(convertBox);
+    layout->addWidget(hintLabel);
+    layout->addWidget(listWidget, 1);
+    layout->addLayout(listActionsRow);
+    layout->addWidget(videoBox);
 
     connect(btnChooseSourceFolder, &QPushButton::clicked, this, &ImageRenamerWidget::chooseSourceFolder);
     connect(btnChooseOutputFolder, &QPushButton::clicked, this, &ImageRenamerWidget::chooseOutputFolder);
@@ -549,4 +581,6 @@ void ImageRenamerWidget::refreshListWidget()
         }
         listWidget->addItem(new QListWidgetItem(QIcon(pixmap), fi.fileName()));
     }
+
+    listSummaryLabel->setText("Изображений: " + QString::number(currentFiles.size()));
 }
