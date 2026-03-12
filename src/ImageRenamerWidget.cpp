@@ -1,29 +1,6 @@
-#include "pch.h"
-#include <QStandardPaths>
-#include <QFileDialog>
-#include <QMessageBox>
-#include <QDir>
-#include <QFileInfo>
-#include <QPixmap>
-#include <QListWidgetItem>
-#include <algorithm>
-#include <QImageReader>
-#include <QFile>
-#include <QMimeData>
-#include <QUrl>
-#include <QAbstractItemModel>
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLabel>
-#include <QDialog>
-#include <QSettings>
-#include <QGroupBox>
-#include <cmath>
 #include "ImageRenamerWidget.h"
 #include "PptxToJpgConverter.h"
 #include "Mp4VideoCreator.h"
-#include <QDragEnterEvent>
-#include <QCollator>
 #include "DraggableListWidget.h"
 
 const int iconSize = 128;

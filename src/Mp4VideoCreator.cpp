@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "Mp4VideoCreator.h"
 
 bool Mp4VideoCreator::createVideo(const QStringList &orderedImages,

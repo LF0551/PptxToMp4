@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "PptxConverter.h"
 
 bool PptxConverter::convertToImages(const QString &pptxPath, const QString &outputDir) const

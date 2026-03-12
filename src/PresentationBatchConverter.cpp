@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "PresentationBatchConverter.h"
 
 #include "PdfConverter.h"
@@ -25,7 +24,7 @@ void convertPortraitImageToLandscape(const QString &filePath)
     const QImage scaled = source.scaled(targetSize, Qt::KeepAspectRatio, Qt::SmoothTransformation);
 
     QImage canvas(targetSize, QImage::Format_RGB32);
-    canvas.fill(Qt::black);
+    canvas.fill(Qt::white);
 
     QPainter painter(&canvas);
     const int x = (targetSize.width() - scaled.width()) / 2;

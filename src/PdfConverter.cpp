@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "PdfConverter.h"
 
 bool PdfConverter::convertToImages(const QString &pdfPath, const QString &outputDir, int dpi) const

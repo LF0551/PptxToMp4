@@ -1,8 +1,4 @@
 #include "DraggableListWidget.h"
-#include <QDropEvent>
-#include <QMimeData>
-#include <QListWidgetItem>
-#include <QDebug>
 
 void DraggableListWidget::dropEvent(QDropEvent *event)
 {
